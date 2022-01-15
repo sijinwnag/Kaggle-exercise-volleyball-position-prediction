@@ -117,9 +117,10 @@ for feature in featurelist:
     plt.show()
 
 # data splitting
-# define the X and y
+# define the X and y: use dummy variables for y
 X = dfunique_clean[['height', 'weight', 'spike', 'block']]
-y = dfunique_clean[['position_number']]
+y = pd.get_dummies(dfunique_clean['position_number'], columns=['position_number'])
+y
 # split the training and testing set
 X_train, X_test, y_train, y_test = train_test_split(X, y)
 # scale the features.
@@ -127,9 +128,8 @@ scaler = MinMaxScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 # we must apply the scaling to the test set that we computed for the training set
 X_test_scaled = scaler.transform(X_test)
-
 ###############################################################################
-# model training
+# model training and evaluation
 # train the ML model: try knn with GridSearchCV varying the number of nearest neighbour
 mknn = KNeighborsClassifier()
 param_knn = {'n_neighbors':range(1, 10)}
@@ -140,7 +140,7 @@ grid_knn.fit(X_train_scaled, y_train)
 # model evaluation for grid_knn
 # confusion matrix
 y_pred_knn = grid_knn.predict(X_test_scaled)
-confusion_matrix(y_test, y_pred_knn)
+# confusion_matrix(y_test, y_pred_knn)
 # macro f1 score.
 knn_macro = f1_score(y_test, y_pred_knn, average='macro')
 knn_macro
@@ -237,41 +237,44 @@ nb_macro
 nb_micro = f1_score(y_test, y_pred_nb, average='micro')
 nb_micro
 
-# Try Neural netwrok: one hot encoder for neural network classification, or use get dummies
-# firstly: try get dummies
-y_train_dummy = pd.get_dummies(y_train)
-y_test_dummy = pd.get_dummies(y_test)
+# Try Neural netwrok: one hot encoder for neural network classification
+ohe = OneHotEncoder()
+# use the encoder to transform y
+y_ohe_train = ohe.fit_transform(y_train).toarray()
+y_ohe_train
+y_ohe_test = ohe.fit_transform(y_test).toarray()
+y_ohe_test
 
 m_nn = MLPClassifier()
 # fit the data
-m_nn.fit(X_train_scaled, y_train_dummy)
+m_nn.fit(X_train_scaled, y_ohe_train)
 # model evaluation for neural neural_network
-y_pred_dummy = m_nn.predict(X_test_scaled)
-print(y_pred_dummy)
+y_pred_ohe = m_nn.predict(X_test_scaled)
+y_pred_ohe
 # encode the onehot encoded y back to original y
 # confusion matrix.
-confusion_matrix(y_test, y_pred_dummy)
+# confusion_matrix(y_test, y_pred_dummy)
 # macro f1 score.
-nn_macro = f1_score(y_test, y_pred_dummy, average='macro')
-nn_macro
+# nn_macro = f1_score(y_test, y_pred_dummy, average='macro')
+# nn_macro
 # micro f1 score
-nn_micro = f1_score(y_test, y_pred_dummy, average='micro')
-nn_micro
+# nn_micro = f1_score(y_test, y_pred_dummy, average='micro')
+# nn_micro
 
 # model comparison
 # in terms of macro f1 score, each class has equal weight
 macrof1 = plt.figure()
 ax = macrof1.add_axes([10, 10, 1, 1])
-model_selection = ['K Nearest Neighbors', 'Kernalized Support Vector Machines', 'Decision Trees', 'Random Forest', 'Gradient Boost', 'Naive Bayes', 'Neural Network']
-f1_macro_scores = [knn_macro, svc_macro, dt_macro, rf_macro, gb_macro, nb_macro, nn_macro]
+model_selection = ['K Nearest Neighbors', 'Kernalized Support Vector Machines', 'Decision Trees', 'Random Forest', 'Gradient Boost', 'Naive Bayes']
+f1_macro_scores = [knn_macro, svc_macro, dt_macro, rf_macro, gb_macro, nb_macro]
 ax.barh(model_selection,f1_macro_scores)
 plt.title('Macro f1 scores')
 plt.show()
 # in terms of micro f1 score, each sample has equal weight
 macrof1 = plt.figure()
 ax = macrof1.add_axes([10, 10, 1, 1])
-model_selection = ['K Nearest Neighbors', 'Kernalized Support Vector Machines', 'Decision Trees', 'Random Forest', 'Gradient Boost', 'Naive Bayes', 'Neural Network']
-f1_macro_scores = [knn_micro, svc_micro, dt_micro, rf_micro, gb_micro, nb_micro, nn_micro]
+model_selection = ['K Nearest Neighbors', 'Kernalized Support Vector Machines', 'Decision Trees', 'Random Forest', 'Gradient Boost', 'Naive Bayes']
+f1_macro_scores = [knn_micro, svc_micro, dt_micro, rf_micro, gb_micro, nb_micro]
 ax.barh(model_selection,f1_macro_scores)
 plt.title('Micro f1 scores')
 plt.show()
