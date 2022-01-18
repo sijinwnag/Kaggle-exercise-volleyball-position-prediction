@@ -1,3 +1,6 @@
+# this files is the position predictor for volleybal: https://www.kaggle.com/johnpendenque/women-volleyball-players/code
+# data-visualization and preprocessing:
+#
 ################################################################################
 # importing the function libraries
 import numpy as np
@@ -69,7 +72,7 @@ def outlier_ft_list(df, ft_list, inner_fence=True):
 ################################################################################
 # data visualization and pre-processing
 # import the data
-df = pd.read_csv(r'C:\Users\sijin wang\Desktop\TOR\MLcode\ball_exercise\clean_data.csv')
+df = pd.read_csv(r'C:\Users\sijin wang\Documents\GitHub\Kaggle-exercise-volleyball-position-prediction\clean_data.csv')
 # rough imformation of DataFrame
 df.info
 # see what are in the columns
@@ -97,7 +100,7 @@ featurelist = ['height', 'weight', 'spike', 'block']
 # do a box plot for each feature before removing outliers
 for feature in featurelist:
     plt.figure()
-    plt.title('box plot for ' + str(feature) + 'before removing outliers')
+    plt.title('box plot for ' + str(feature) + ' before removing outliers')
     plt.grid(False)
     dfunique.boxplot(column=[feature])
     plt.show()
@@ -111,7 +114,7 @@ np.shape(dfunique_clean)
 # do box  plot again to visualize the data.
 for feature in featurelist:
     plt.figure()
-    plt.title('box plot for ' + str(feature) + 'before removing outliers')
+    plt.title('box plot for ' + str(feature) + ' after removing outliers')
     plt.grid(False)
     dfunique_clean.boxplot(column=[feature])
     plt.show()
@@ -119,8 +122,8 @@ for feature in featurelist:
 # data splitting
 # define the X and y: use dummy variables for y
 X = dfunique_clean[['height', 'weight', 'spike', 'block']]
-y = pd.get_dummies(dfunique_clean['position_number'], columns=['position_number'])
-y
+# y = pd.get_dummies(dfunique_clean['position_number'], columns=['position_number'])
+y = dfunique_clean['position_number']
 # split the training and testing set
 X_train, X_test, y_train, y_test = train_test_split(X, y)
 # scale the features.
@@ -128,6 +131,7 @@ scaler = MinMaxScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 # we must apply the scaling to the test set that we computed for the training set
 X_test_scaled = scaler.transform(X_test)
+
 ###############################################################################
 # model training and evaluation
 # train the ML model: try knn with GridSearchCV varying the number of nearest neighbour
@@ -154,7 +158,6 @@ param_svc = {'C': np.linspace(0.1, 10), 'kernel': ('linear', 'poly', 'rbf')}
 grid_svc = GridSearchCV(msvc, param_svc)
 # train the model using training Dataset
 grid_svc.fit(X_train_scaled, y_train)
-
 # model evaluation for SVC
 y_pred_svc = grid_svc.predict(X_test_scaled)
 # confusion matrix.
@@ -172,7 +175,6 @@ param_dt = {'max_depth': [10, 100, 1e3]}
 grid_dt = GridSearchCV(mdt, param_dt)
 # train the model using training Dataset
 grid_dt.fit(X_train_scaled, y_train)
-
 y_pred_dt = grid_dt.predict(X_test_scaled)
 # model evaluation for decision tree.
 # confusion matrix.
@@ -191,7 +193,6 @@ param_rf = {'max_features':('auto', 'log2', '')}
 grid_rf = GridSearchCV(mrf, param_rf)
 # train the model with data.
 grid_rf.fit(X_train_scaled, y_train)
-
 # model evaluation for random RandomForestClassifier
 y_pred_rf = grid_rf.predict(X_test_scaled)
 # confusion matrix.
@@ -209,7 +210,6 @@ param_gb = {'n_estimators':[100, 500, 1e3], 'learning_rate':[0.1, 1, 10], 'max_d
 grid_gb = GridSearchCV(mgb, param_gb)
 # train the model using Dataset
 grid_gb.fit(X_train_scaled, y_train)
-
 # model evaluation for Gradient GradientBoostingClassifier
 y_pred_gb = grid_gb.predict(X_test_scaled)
 # confusion matrix.
@@ -224,7 +224,6 @@ gb_micro
 # Try Naïve Bayes Classifiers
 mnb = GaussianNB()
 mnb.fit(X_train_scaled, y_train)
-
 # model evaluation for Naive Bayes Classifiers
 # model evaluation for Gradient GradientBoostingClassifier
 y_pred_nb = mnb.predict(X_test_scaled)
@@ -238,43 +237,42 @@ nb_micro = f1_score(y_test, y_pred_nb, average='micro')
 nb_micro
 
 # Try Neural netwrok: one hot encoder for neural network classification
-ohe = OneHotEncoder()
+# ohe = OneHotEncoder()
 # use the encoder to transform y
-y_ohe_train = ohe.fit_transform(y_train).toarray()
-y_ohe_train
-y_ohe_test = ohe.fit_transform(y_test).toarray()
-y_ohe_test
-
-m_nn = MLPClassifier()
+# y_ohe_train = ohe.fit_transform(y_train).toarray()
+# y_ohe_train
+# y_ohe_test = ohe.fit_transform(y_test).toarray()
+# y_ohe_test
+m_nn = MLPClassifier(hidden_layer_sizes=(100, 300, 300, 300, 100))
 # fit the data
-m_nn.fit(X_train_scaled, y_ohe_train)
+m_nn.fit(X_train_scaled, y_train)
 # model evaluation for neural neural_network
-y_pred_ohe = m_nn.predict(X_test_scaled)
-y_pred_ohe
+y_pred_nn = m_nn.predict(X_test_scaled)
+y_pred_nn
 # encode the onehot encoded y back to original y
 # confusion matrix.
-# confusion_matrix(y_test, y_pred_dummy)
+confusion_matrix(y_test, y_pred_nn)
 # macro f1 score.
-# nn_macro = f1_score(y_test, y_pred_dummy, average='macro')
-# nn_macro
+nn_macro = f1_score(y_test, y_pred_nn, average='macro')
+nn_macro
 # micro f1 score
-# nn_micro = f1_score(y_test, y_pred_dummy, average='micro')
-# nn_micro
+nn_micro = f1_score(y_test, y_pred_nn, average='micro')
+nn_micro
 
 # model comparison
 # in terms of macro f1 score, each class has equal weight
 macrof1 = plt.figure()
 ax = macrof1.add_axes([10, 10, 1, 1])
-model_selection = ['K Nearest Neighbors', 'Kernalized Support Vector Machines', 'Decision Trees', 'Random Forest', 'Gradient Boost', 'Naive Bayes']
-f1_macro_scores = [knn_macro, svc_macro, dt_macro, rf_macro, gb_macro, nb_macro]
+model_selection = ['K Nearest Neighbors', 'Kernalized Support Vector Machines', 'Decision Trees', 'Random Forest', 'Gradient Boost', 'Naive Bayes', 'Neural network']
+f1_macro_scores = [knn_macro, svc_macro, dt_macro, rf_macro, gb_macro, nb_macro, nn_macro]
 ax.barh(model_selection,f1_macro_scores)
 plt.title('Macro f1 scores')
 plt.show()
 # in terms of micro f1 score, each sample has equal weight
 macrof1 = plt.figure()
 ax = macrof1.add_axes([10, 10, 1, 1])
-model_selection = ['K Nearest Neighbors', 'Kernalized Support Vector Machines', 'Decision Trees', 'Random Forest', 'Gradient Boost', 'Naive Bayes']
-f1_macro_scores = [knn_micro, svc_micro, dt_micro, rf_micro, gb_micro, nb_micro]
+model_selection = ['K Nearest Neighbors', 'Kernalized Support Vector Machines', 'Decision Trees', 'Random Forest', 'Gradient Boost', 'Naive Bayes', 'Neural network']
+f1_macro_scores = [knn_micro, svc_micro, dt_micro, rf_micro, gb_micro, nb_micro, nn_micro]
 ax.barh(model_selection,f1_macro_scores)
 plt.title('Micro f1 scores')
 plt.show()
